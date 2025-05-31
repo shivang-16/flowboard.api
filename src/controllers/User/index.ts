@@ -30,7 +30,7 @@ export const getUsersByProjectId = async (
 
         // Find users where the projectId is present in their 'projects' array
         const users = await User.find({ projects: projectId });
-        
+
 
         if (!users || users.length === 0) {
             return next(new CustomError('No users found for this project', 404));
@@ -91,11 +91,14 @@ export const assignUserToTask = async (
 ) => {
     try {
         const { taskId, userId } = req.body;
+        console.log(req.body, "here is body arequst");
 
         const user = await User.findById(userId);
         if (!user) {
             return next(new CustomError('User not found', 404));
         }
+
+        console.log(user);
 
         const task = await Task.findById(taskId);
         if (!task) {

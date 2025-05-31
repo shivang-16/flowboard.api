@@ -150,7 +150,7 @@ const updateTask = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
     var _a;
     try {
         const { id } = req.params;
-        const { name, description, assignedTo, status, dueDate } = req.body;
+        const { name, description, assignedTo, status, dueDate, priority } = req.body;
         const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
         if (!owner) {
             return next(new error_1.CustomError('User not authenticated', 401));
@@ -163,7 +163,7 @@ const updateTask = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
             return next(new error_1.CustomError('Task not found or you do not have permission to update', 404));
         }
         const oldStatus = task.status;
-        const updatedTask = yield taskModel_1.default.findOneAndUpdate({ _id: id }, { name, description, assignedTo, status, dueDate }, { new: true, runValidators: true });
+        const updatedTask = yield taskModel_1.default.findOneAndUpdate({ _id: id }, { name, description, assignedTo, status, dueDate, priority }, { new: true, runValidators: true });
         // Update project analytics if status changed
         if (oldStatus !== status) {
             const updateQuery = {
@@ -193,6 +193,7 @@ const updateTask = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         }
         res.status(200).json({
             success: true,
+            message: "Task Updated",
             task: updatedTask,
         });
     }

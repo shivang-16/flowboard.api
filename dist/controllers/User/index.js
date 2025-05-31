@@ -82,10 +82,12 @@ exports.assignUserToProject = assignUserToProject;
 const assignUserToTask = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { taskId, userId } = req.body;
+        console.log(req.body, "here is body arequst");
         const user = yield userModel_1.User.findById(userId);
         if (!user) {
             return next(new error_1.CustomError('User not found', 404));
         }
+        console.log(user);
         const task = yield taskModel_1.default.findById(taskId);
         if (!task) {
             return next(new error_1.CustomError('Task not found', 404));

@@ -169,7 +169,7 @@ export const updateTask = async (
 ) => {
     try {
         const { id } = req.params;
-        const { name, description, assignedTo, status, dueDate } = req.body;
+        const { name, description, assignedTo, status, dueDate, priority } = req.body;
         const owner = req.user?._id;
 
         if (!owner) {
@@ -188,7 +188,7 @@ export const updateTask = async (
         const oldStatus = task.status;
         const updatedTask = await Task.findOneAndUpdate(
             { _id: id },
-            { name, description, assignedTo, status, dueDate },
+            { name, description, assignedTo, status, dueDate, priority },
             { new: true, runValidators: true }
         );
 
@@ -221,6 +221,7 @@ export const updateTask = async (
 
         res.status(200).json({
             success: true,
+            message: "Task Updated",
             task: updatedTask,
         });
     } catch (error) {
