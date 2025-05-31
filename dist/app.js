@@ -39,6 +39,7 @@ const auth_1 = __importDefault(require("./routes/auth"));
 const googleAuth_1 = __importDefault(require("./routes/googleAuth"));
 const project_1 = __importDefault(require("./routes/project"));
 const task_1 = __importDefault(require("./routes/task"));
+const user_1 = __importDefault(require("./routes/user"));
 (0, dotenv_1.config)({
     path: './.env'
 });
@@ -64,6 +65,7 @@ app.use('/api/auth', auth_1.default);
 app.use("/api/google", googleAuth_1.default);
 app.use('/api/project', project_1.default);
 app.use('/api/task', task_1.default);
+app.use('/api/user', user_1.default);
 app.get('/', (req, res) => {
     res.send('Hello, world!');
 });

@@ -12,40 +12,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUser = exports.logout = exports.resetPassword = exports.forgotPassword = exports.login = exports.register = void 0;
+exports.getUser = exports.logout = exports.login = exports.register = void 0;
 const userModel_1 = require("../../models/userModel");
 const error_1 = require("../../middleware/error");
 const setCookies_1 = __importDefault(require("../../utils/setCookies"));
-const crypto_1 = __importDefault(require("crypto"));
-// import { db } from "../../db/db";
-const sendMail_1 = require("../../utils/sendMail");
-const hashPassword = (password, salt) => {
-    return new Promise((resolve, reject) => {
-        crypto_1.default.pbkdf2(password, salt, 1000, 64, 'sha512', (err, derivedKey) => {
-            if (err)
-                reject(err);
-            resolve(derivedKey.toString('hex'));
-        });
-    });
-};
+// Remove hashPassword function as it's no longer needed
 const register = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { firstname, email, password } = req.body;
+        const { name, email, password } = req.body;
         // Check if user already exists
-        const existingUser = yield userModel_1.Admin.findOne({ email });
+        const existingUser = yield userModel_1.User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
         // Create new user
-        const salt = crypto_1.default.randomBytes(16).toString('hex');
-        const hashedPassword = yield hashPassword(password, salt);
-        const newUser = new userModel_1.Admin({
+        // Bcrypt hashing is now handled in the userModel pre-save hook
+        const firstname = name.split(" ")[0];
+        const lastname = name.split(" ")[1];
+        const newUser = new userModel_1.User({
             firstname,
+            lastname,
             email,
-            salt,
-            password: hashedPassword,
+            password, // Pass plain password, pre-save hook will hash it
         });
         yield newUser.save();
+        (0, setCookies_1.default)({
+            user: newUser,
+            res,
+            next,
+            message: "Login Success",
+            statusCode: 200,
+        });
         res.status(201).json({ message: 'User registered successfully' });
     }
     catch (error) {
@@ -58,13 +55,15 @@ const login = (req, res, next) => __awaiter(void 0, void 0, void 0, function* ()
     const { email, password } = req.body;
     try {
         // Find user by email
-        const user = yield userModel_1.Admin.findOne({ email }).select('+password +salt');
+        const user = yield userModel_1.User.findOne({ email }).select('+password'); // Only select password, salt is not needed
         if (!user) {
+            console.log("User not found");
             return res.status(400).json({ message: 'Invalid email or password' });
         }
-        // Compare password
+        // Compare password using bcrypt
         const isMatch = yield user.comparePassword(password);
         if (!isMatch) {
+            console.log("Invalid password");
             return res.status(400).json({ message: 'Invalid email or password' });
         }
         (0, setCookies_1.default)({
@@ -82,83 +81,6 @@ const login = (req, res, next) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.login = login;
-const forgotPassword = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { email } = req.body;
-        const user = yield userModel_1.Admin.findOne({ email });
-        if (!user)
-            return next(new error_1.CustomError("Email not registered", 400));
-        const resetToken = yield user.getToken();
-        yield user.save(); //saving the token in user
-        const url = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
-        // await otpQueue.add("otpVerify", {
-        //   options: {
-        //     email: email,
-        //     subject: "Password Reset",
-        //     message: `You reset password link is here ${url}`,
-        //   },
-        // });
-        yield (0, sendMail_1.sendMail)({
-            email,
-            subject: "Password Reset",
-            message: url,
-            tag: 'password_reset'
-        });
-        (0, setCookies_1.default)({
-            user,
-            res,
-            next,
-            message: "Login Success",
-            statusCode: 200,
-        });
-        res.status(200).json({
-            success: true,
-            message: `Reset password link sent to ${email}`,
-        });
-    }
-    catch (error) {
-        next(new error_1.CustomError(error.message));
-    }
-});
-exports.forgotPassword = forgotPassword;
-const resetPassword = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { token } = req.params;
-    const { password } = req.body;
-    try {
-        if (!token) {
-            throw new Error("Reset token is required");
-        }
-        const resetPasswordToken = crypto_1.default.createHash('sha256').update(token).digest('hex');
-        console.log('Reset Password Token:', resetPasswordToken);
-        const user = yield userModel_1.Admin.findOne({
-            resetPasswordToken,
-            resetTokenExpiry: { $gt: Date.now() },
-        });
-        if (!user) {
-            return res.status(400).json({ success: false, message: 'Invalid or expired token' });
-        }
-        const hashedPassword = yield new Promise((resolve, reject) => {
-            crypto_1.default.pbkdf2(password, user.salt, 1000, 64, 'sha512', (err, derivedKey) => {
-                if (err)
-                    reject(err);
-                resolve(derivedKey.toString('hex'));
-            });
-        });
-        user.password = hashedPassword;
-        user.resetPasswordToken = null;
-        user.resetTokenExpiry = null;
-        yield user.save();
-        res.status(200).json({
-            success: true,
-            message: 'Password reset successful',
-        });
-    }
-    catch (error) {
-        console.log(error);
-        next(new error_1.CustomError(error.message));
-    }
-});
-exports.resetPassword = resetPassword;
 const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res
         .status(200)
@@ -173,7 +95,7 @@ const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.logout = logout;
 const getUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const user = yield userModel_1.Admin.findById(req.user._id);
+        const user = yield userModel_1.User.findById(req.user._id);
         if (!user)
             return next(new error_1.CustomError("User not found", 400));
         res.status(200).json({

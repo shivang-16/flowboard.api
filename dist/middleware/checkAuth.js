@@ -24,7 +24,7 @@ const checkAuth = (req, res, next) => __awaiter(void 0, void 0, void 0, function
     if (!secret)
         return next(new error_1.CustomError("Jwt Secret not defined", 400));
     const decoded = jsonwebtoken_1.default.verify(token, secret);
-    req.user = yield userModel_1.Admin.findById(decoded.id);
+    req.user = yield userModel_1.User.findById(decoded.id);
     next();
 });
 exports.checkAuth = checkAuth;

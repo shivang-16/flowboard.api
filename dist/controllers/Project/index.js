@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteProject = exports.updateProject = exports.getProjectById = exports.getProjects = exports.createProject = void 0;
 const projectModel_1 = __importDefault(require("../../models/projectModel"));
 const error_1 = require("../../middleware/error");
+const userModel_1 = require("../../models/userModel"); // Import the User model
 const createProject = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -28,6 +29,8 @@ const createProject = (req, res, next) => __awaiter(void 0, void 0, void 0, func
             description,
             owner,
         });
+        // Add the project to the user's projects array
+        yield userModel_1.User.findByIdAndUpdate(owner, { $push: { projects: project._id } }, { new: true, useFindAndModify: false });
         res.status(201).json({
             success: true,
             message: 'Project created successfully',

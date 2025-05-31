@@ -8,5 +8,4 @@ const db_1 = __importDefault(require("./db/db"));
 const winstonLogger_1 = require("./utils/winstonLogger");
 const port = process.env.PORT || 4000;
 (0, db_1.default)(); //main db
-// otpWorker
 app_1.app.listen(port, () => winstonLogger_1.logger.info(`Server is running on port ${port}`));

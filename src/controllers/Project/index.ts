@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Project from '../../models/projectModel';
 import { CustomError } from '../../middleware/error';
+import { User } from "../../models/userModel"; // Import the User model
 
 export const createProject = async (
     req: Request,
@@ -18,7 +19,15 @@ export const createProject = async (
             name,
             description,
             owner,
+            
         });
+
+        // Add the project to the user's projects array
+        await User.findByIdAndUpdate(
+            owner,
+            { $push: { projects: project._id } },
+            { new: true, useFindAndModify: false }
+        );
 
         res.status(201).json({
             success: true,

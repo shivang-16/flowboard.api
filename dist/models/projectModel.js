@@ -29,10 +29,11 @@ const ProjectSchema = new mongoose_1.Schema({
     description: { type: String },
     owner: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     tasks: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Task' }],
+    members: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }],
     analytics: {
-        totalTasks: { type: Number, default: 0 },
+        todoTask: { type: Number, default: 0 },
         completedTasks: { type: Number, default: 0 },
-        overdueTasks: { type: Number, default: 0 },
+        inProgressTasks: { type: Number, default: 0 },
     },
     statuses: [{
             label: { type: String, required: true },

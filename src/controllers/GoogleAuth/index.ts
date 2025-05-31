@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import axios from "axios";
 import { CustomError } from "../../middleware/error";
-import {Admin} from "../../models/userModel";
+import {User} from "../../models/userModel";
 import setCookie from "../../utils/setCookies";
 
 
@@ -33,7 +33,7 @@ export const googleAuth = async (
 
     if (!email) return next(new CustomError("Email not found", 404));
     const nameArray = name.split(" ");
-    const user = await Admin.findOne({ email });
+    const user = await User.findOne({ email });
     if (user) {
       // If user already exists then log in the user
       setCookie({
@@ -45,7 +45,7 @@ export const googleAuth = async (
       });
     } else {
       // If user not found then create a new user
-      const newUser = await Admin.create({
+      const newUser = await User.create({
         firstname: nameArray[0],
         lastname: nameArray.length > 1 ? nameArray[1] : null,
         email,

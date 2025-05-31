@@ -9,8 +9,8 @@ export const createTask = async (
     next: NextFunction
 ) => {
     try {
-        const { name, description, projectId, assignedTo, status, dueDate, priority } = req.body;
-        const owner = req.user?._id; // Assuming user ID is available from authentication middleware
+        const { name, description, projectId, assignedTo, status = 'todo', dueDate, priority } = req.body;
+        const owner = req.user?._id;
 
         if (!owner) {
             return next(new CustomError('User not authenticated', 401));
@@ -22,7 +22,6 @@ export const createTask = async (
             return next(new CustomError('Project not found', 404));
         }
 
-        // Ensure the user creating the task owns the project
         if (project.owner.toString() !== owner.toString()) {
             return next(new CustomError('You are not authorized to create tasks in this project', 403));
         }
@@ -37,6 +36,21 @@ export const createTask = async (
             priority,
             createdBy: owner,
         });
+
+        // Update project analytics based on initial status
+        const updateQuery: any = {
+            $inc: {}
+        };
+        
+        if (status === 'todo') {
+            updateQuery.$inc['analytics.todoTask'] = 1;
+        } else if (status === 'in-progress') {
+            updateQuery.$inc['analytics.inProgressTasks'] = 1;
+        } else if (status === 'done') {
+            updateQuery.$inc['analytics.completedTasks'] = 1;
+        }
+
+        await Project.findByIdAndUpdate(projectId, updateQuery);
 
         res.status(201).json({
             success: true,
@@ -96,7 +110,15 @@ export const getTasksByProjectId = async (
             return next(new CustomError('Project not found or unauthorized', 404));
         }
 
-        const tasks = await Task.find({ project: projectId }).populate('createdBy');
+        const tasks = await Task.find({ project: projectId })
+            .populate({
+                path: 'createdBy',
+                select: 'firstname lastname email' // Populate only name and email
+            })
+            .populate({
+                path: 'assignedTo',
+                select: 'firstname lastname email' // Populate only name and email
+            });
 
         res.status(200).json({
             success: true,
@@ -163,11 +185,39 @@ export const updateTask = async (
             return next(new CustomError('Task not found or you do not have permission to update', 404));
         }
 
+        const oldStatus = task.status;
         const updatedTask = await Task.findOneAndUpdate(
             { _id: id },
             { name, description, assignedTo, status, dueDate },
             { new: true, runValidators: true }
         );
+
+        // Update project analytics if status changed
+        if (oldStatus !== status) {
+            const updateQuery: any = {
+                $inc: {}
+            };
+            
+            // Decrement old status counter
+            if (oldStatus === 'todo') {
+                updateQuery.$inc['analytics.todoTask'] = -1;
+            } else if (oldStatus === 'in-progress') {
+                updateQuery.$inc['analytics.inProgressTasks'] = -1;
+            } else if (oldStatus === 'done') {
+                updateQuery.$inc['analytics.completedTasks'] = -1;
+            }
+            
+            // Increment new status counter
+            if (status === 'todo') {
+                updateQuery.$inc['analytics.todoTask'] = (updateQuery.$inc['analytics.todoTask'] || 0) + 1;
+            } else if (status === 'in-progress') {
+                updateQuery.$inc['analytics.inProgressTasks'] = (updateQuery.$inc['analytics.inProgressTasks'] || 0) + 1;
+            } else if (status === 'done') {
+                updateQuery.$inc['analytics.completedTasks'] = (updateQuery.$inc['analytics.completedTasks'] || 0) + 1;
+            }
+
+            await Project.findByIdAndUpdate((task.project as any)._id, updateQuery);
+        }
 
         res.status(200).json({
             success: true,

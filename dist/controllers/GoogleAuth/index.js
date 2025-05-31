@@ -33,7 +33,7 @@ const googleAuth = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         if (!email)
             return next(new error_1.CustomError("Email not found", 404));
         const nameArray = name.split(" ");
-        const user = yield userModel_1.Admin.findOne({ email });
+        const user = yield userModel_1.User.findOne({ email });
         if (user) {
             // If user already exists then log in the user
             (0, setCookies_1.default)({
@@ -46,7 +46,7 @@ const googleAuth = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         }
         else {
             // If user not found then create a new user
-            const newUser = yield userModel_1.Admin.create({
+            const newUser = yield userModel_1.User.create({
                 firstname: nameArray[0],
                 lastname: nameArray.length > 1 ? nameArray[1] : null,
                 email,

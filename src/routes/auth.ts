@@ -1,11 +1,9 @@
 import express from "express";
 import {
-  forgotPassword,
   getUser,
   login,
   logout,
-  register,
-  resetPassword,
+  register
 } from "../controllers/Auth";
 import { checkAuth } from "../middleware/checkAuth";
 
@@ -16,8 +14,6 @@ router.post("/register", register);
 // router.post("/resend", resentOtp);
 router.post("/login", login);
 router.get("/logout", checkAuth, logout);
-router.post("/forgetpassword", forgotPassword);
-router.put("/resetpassword/:token", checkAuth, resetPassword);
 router.get("/user", checkAuth, getUser);
 
 export default router;

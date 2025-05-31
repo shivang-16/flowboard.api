@@ -5,7 +5,7 @@ export interface ITask extends Document {
     description?: string;
     project: mongoose.Schema.Types.ObjectId;
     assignedTo?: mongoose.Schema.Types.ObjectId;
-    status: 'pending' | 'in-progress' | 'completed';
+    status: 'todo' | 'in-progress' | 'done';
     dueDate?: Date;
     createdAt: Date;
 }

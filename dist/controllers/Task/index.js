@@ -19,8 +19,8 @@ const error_1 = require("../../middleware/error");
 const createTask = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const { name, description, projectId, assignedTo, status, dueDate, priority } = req.body;
-        const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id; // Assuming user ID is available from authentication middleware
+        const { name, description, projectId, assignedTo, status = 'todo', dueDate, priority } = req.body;
+        const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
         if (!owner) {
             return next(new error_1.CustomError('User not authenticated', 401));
         }
@@ -28,7 +28,6 @@ const createTask = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         if (!project) {
             return next(new error_1.CustomError('Project not found', 404));
         }
-        // Ensure the user creating the task owns the project
         if (project.owner.toString() !== owner.toString()) {
             return next(new error_1.CustomError('You are not authorized to create tasks in this project', 403));
         }
@@ -42,6 +41,20 @@ const createTask = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
             priority,
             createdBy: owner,
         });
+        // Update project analytics based on initial status
+        const updateQuery = {
+            $inc: {}
+        };
+        if (status === 'todo') {
+            updateQuery.$inc['analytics.todoTask'] = 1;
+        }
+        else if (status === 'in-progress') {
+            updateQuery.$inc['analytics.inProgressTasks'] = 1;
+        }
+        else if (status === 'done') {
+            updateQuery.$inc['analytics.completedTasks'] = 1;
+        }
+        yield projectModel_1.default.findByIdAndUpdate(projectId, updateQuery);
         res.status(201).json({
             success: true,
             message: 'Task created successfully',
@@ -89,7 +102,15 @@ const getTasksByProjectId = (req, res, next) => __awaiter(void 0, void 0, void 0
         if (!project || project.owner.toString() !== owner.toString()) {
             return next(new error_1.CustomError('Project not found or unauthorized', 404));
         }
-        const tasks = yield taskModel_1.default.find({ project: projectId }).populate('createdBy');
+        const tasks = yield taskModel_1.default.find({ project: projectId })
+            .populate({
+            path: 'createdBy',
+            select: 'firstname lastname email' // Populate only name and email
+        })
+            .populate({
+            path: 'assignedTo',
+            select: 'firstname lastname email' // Populate only name and email
+        });
         res.status(200).json({
             success: true,
             tasks,
@@ -141,7 +162,35 @@ const updateTask = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         if (!task || !task.project) {
             return next(new error_1.CustomError('Task not found or you do not have permission to update', 404));
         }
+        const oldStatus = task.status;
         const updatedTask = yield taskModel_1.default.findOneAndUpdate({ _id: id }, { name, description, assignedTo, status, dueDate }, { new: true, runValidators: true });
+        // Update project analytics if status changed
+        if (oldStatus !== status) {
+            const updateQuery = {
+                $inc: {}
+            };
+            // Decrement old status counter
+            if (oldStatus === 'todo') {
+                updateQuery.$inc['analytics.todoTask'] = -1;
+            }
+            else if (oldStatus === 'in-progress') {
+                updateQuery.$inc['analytics.inProgressTasks'] = -1;
+            }
+            else if (oldStatus === 'done') {
+                updateQuery.$inc['analytics.completedTasks'] = -1;
+            }
+            // Increment new status counter
+            if (status === 'todo') {
+                updateQuery.$inc['analytics.todoTask'] = (updateQuery.$inc['analytics.todoTask'] || 0) + 1;
+            }
+            else if (status === 'in-progress') {
+                updateQuery.$inc['analytics.inProgressTasks'] = (updateQuery.$inc['analytics.inProgressTasks'] || 0) + 1;
+            }
+            else if (status === 'done') {
+                updateQuery.$inc['analytics.completedTasks'] = (updateQuery.$inc['analytics.completedTasks'] || 0) + 1;
+            }
+            yield projectModel_1.default.findByIdAndUpdate(task.project._id, updateQuery);
+        }
         res.status(200).json({
             success: true,
             task: updatedTask,

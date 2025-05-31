@@ -35,8 +35,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Admin = void 0;
+exports.User = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const crypto_1 = __importDefault(require("crypto"));
 const util_1 = require("util");
 const pbkdf2Async = (0, util_1.promisify)(crypto_1.default.pbkdf2);
@@ -53,9 +54,9 @@ const userSchema = new mongoose_1.Schema({
         required: true,
         unique: true,
     },
-    organisation: [{
+    projects: [{
             type: mongoose_1.default.Schema.Types.ObjectId,
-            ref: "Organisation",
+            ref: "Project",
         }],
     phone: {
         type: String,
@@ -64,9 +65,7 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         select: false,
     },
-    salt: {
-        type: String,
-    },
+    // Remove salt field as bcrypt handles it internally
     avatar: {
         public_id: {
             type: String,
@@ -116,36 +115,21 @@ userSchema.pre("save", function (next) {
     }
     next();
 });
-// Password hashing
+// Password hashing with bcrypt
 userSchema.pre('save', function (next) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!this.isModified('password'))
             return next();
-        const salt = crypto_1.default.randomBytes(16).toString('hex');
-        this.salt = salt;
-        const derivedKey = yield pbkdf2Async(this.password, salt, 1000, 64, 'sha512');
-        this.password = derivedKey.toString('hex');
+        const salt = yield bcryptjs_1.default.genSalt(10); // Generate a salt
+        this.password = yield bcryptjs_1.default.hash(this.password, salt); // Hash the password
+        // No need to store salt explicitly, bcrypt handles it within the hash
         next();
     });
 });
-// Set default permissions based on role
-userSchema.pre('save', function (next) {
-    if (this.role === 'superadmin') {
-        this.permissions = Object.assign(Object.assign({}, this.permissions), { managePayments: true, manageSettings: true, manageAdmins: true });
-    }
-    next();
-});
-// Method to compare password
+// Method to compare password with bcrypt
 userSchema.methods.comparePassword = function (candidatePassword) {
     return __awaiter(this, void 0, void 0, function* () {
-        const hashedPassword = yield new Promise((resolve, reject) => {
-            crypto_1.default.pbkdf2(candidatePassword, this.salt, 1000, 64, "sha512", (err, derivedKey) => {
-                if (err)
-                    reject(err);
-                resolve(derivedKey.toString("hex"));
-            });
-        });
-        return hashedPassword === this.password;
+        return yield bcryptjs_1.default.compare(candidatePassword, this.password);
     });
 };
 // Method to generate reset token
@@ -169,4 +153,4 @@ userSchema.methods.logActivity = function (action, details, ipAddress) {
         timestamp: new Date()
     });
 };
-exports.Admin = mongoose_1.default.model("User", userSchema);
+exports.User = mongoose_1.default.model("User", userSchema);

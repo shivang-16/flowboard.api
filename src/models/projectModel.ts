@@ -4,6 +4,17 @@ export interface IProject extends Document {
     name: string;
     description?: string;
     owner: mongoose.Schema.Types.ObjectId;
+    members: mongoose.Schema.Types.ObjectId[];
+    tasks: mongoose.Schema.Types.ObjectId[];
+    analytics: {
+        todoTask: number;
+        completedTasks: number;
+        inProgressTasks: number;
+    };
+    statuses: {
+        label: string;
+        value: number;
+    }
     createdAt: Date;
 }
 
@@ -12,10 +23,11 @@ const ProjectSchema: Schema = new Schema({
     description: { type: String },
     owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     tasks: [{ type: Schema.Types.ObjectId, ref: 'Task' }],
+    members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     analytics: {
-        totalTasks: { type: Number, default: 0 },
+        todoTask: { type: Number, default: 0 },
         completedTasks: { type: Number, default: 0 },
-        overdueTasks: { type: Number, default: 0 },
+        inProgressTasks: { type: Number, default: 0 },
     },
     statuses: [{
         label: { type: String, required: true },

@@ -11,6 +11,7 @@ interface IUser extends Document {
     public_id: string;
     url: string;
   };
+  projects: Array<{}>;
   lastLogin: Date | null;
   status: 'Active' | 'Inactive' | 'Suspended';
   activityLog: Array<{

@@ -10,6 +10,7 @@ import authRoutes from './routes/auth'
 import googleRoutes from './routes/googleAuth'
 import projectRoutes from './routes/project';
 import taskRoutes from './routes/task';
+import userRoutes from './routes/user';
 
 
 config({
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes)
 app.use("/api/google", googleRoutes);
 app.use('/api/project', projectRoutes);
 app.use('/api/task', taskRoutes);
+app.use('/api/user', userRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello, world!');
