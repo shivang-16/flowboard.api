@@ -25,8 +25,8 @@ const setCookie = (_a) => __awaiter(void 0, [_a], void 0, function* ({ user, res
             .cookie("token", token, {
             httpOnly: true,
             maxAge: 30 * 24 * 60 * 60 * 1000,
-            sameSite: "lax",
-            secure: false,
+            sameSite: "none",
+            secure: true,
         })
             .json({
             success: true,
