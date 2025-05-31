@@ -1,0 +1,127 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteProject = exports.updateProject = exports.getProjectById = exports.getProjects = exports.createProject = void 0;
+const projectModel_1 = __importDefault(require("../../models/projectModel"));
+const error_1 = require("../../middleware/error");
+const createProject = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { name, description } = req.body;
+        const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+        if (!owner) {
+            return next(new error_1.CustomError('User not authenticated', 401));
+        }
+        const project = yield projectModel_1.default.create({
+            name,
+            description,
+            owner,
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Project created successfully',
+            project,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.createProject = createProject;
+const getProjects = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+        if (!owner) {
+            return next(new error_1.CustomError('User not authenticated', 401));
+        }
+        const projects = yield projectModel_1.default.find({ owner });
+        res.status(200).json({
+            success: true,
+            projects,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.getProjects = getProjects;
+const getProjectById = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { id } = req.params;
+        const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+        if (!owner) {
+            return next(new error_1.CustomError('User not authenticated', 401));
+        }
+        const project = yield projectModel_1.default.findOne({ _id: id, owner });
+        if (!project) {
+            return next(new error_1.CustomError('Project not found', 404));
+        }
+        res.status(200).json({
+            success: true,
+            project,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.getProjectById = getProjectById;
+const updateProject = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+        const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+        if (!owner) {
+            return next(new error_1.CustomError('User not authenticated', 401));
+        }
+        const project = yield projectModel_1.default.findOneAndUpdate({ _id: id, owner }, { name, description }, { new: true, runValidators: true });
+        if (!project) {
+            return next(new error_1.CustomError('Project not found or you do not have permission to update', 404));
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Project updated successfully',
+            project,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.updateProject = updateProject;
+const deleteProject = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { id } = req.params;
+        const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+        if (!owner) {
+            return next(new error_1.CustomError('User not authenticated', 401));
+        }
+        const project = yield projectModel_1.default.findOneAndDelete({ _id: id, owner });
+        if (!project) {
+            return next(new error_1.CustomError('Project not found or you do not have permission to delete', 404));
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Project deleted successfully',
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.deleteProject = deleteProject;
