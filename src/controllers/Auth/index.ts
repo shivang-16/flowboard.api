@@ -2,8 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import {User} from "../../models/userModel";
 import { CustomError } from "../../middleware/error";
 import setCookie from "../../utils/setCookies";
-import bcrypt from "bcryptjs"; // Import bcryptjs
-import { sendMail } from "../../utils/sendMail";
 
 // Remove hashPassword function as it's no longer needed
 
