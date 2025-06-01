@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Project from '../../models/projectModel';
 import { CustomError } from '../../middleware/error';
 import { User } from "../../models/userModel"; // Import the User model
+import Task from '../../models/taskModel';
 
 export const createProject = async (
     req: Request,
@@ -97,16 +98,21 @@ export const updateProject = async (
 ) => {
     try {
         const { id } = req.params;
-        const { name, description } = req.body;
+        const { name, description, statuses } = req.body;
         const owner = req.user?._id;
 
         if (!owner) {
             return next(new CustomError('User not authenticated', 401));
         }
 
+        const updateFields: { name?: string; description?: string; statuses?: any[] } = {};
+        if (name) updateFields.name = name;
+        if (description) updateFields.description = description;
+        if (statuses) updateFields.statuses = statuses;
+
         const project = await Project.findOneAndUpdate(
             { _id: id, owner },
-            { name, description },
+            updateFields,
             { new: true, runValidators: true }
         );
 
@@ -137,11 +143,23 @@ export const deleteProject = async (
             return next(new CustomError('User not authenticated', 401));
         }
 
+        // Check if there are any tasks assigned to this project
+        const tasksCount = await Task.countDocuments({ project: id });
+        if (tasksCount > 0) {
+            return next(new CustomError('Cannot delete project: It has assigned tasks.', 400));
+        }
+
         const project = await Project.findOneAndDelete({ _id: id, owner });
 
         if (!project) {
             return next(new CustomError('Project not found or you do not have permission to delete', 404));
         }
+
+        // Remove the project from all users' projects array
+        await User.updateMany(
+            { projects: id },
+            { $pull: { projects: id } }
+        );
 
         res.status(200).json({
             success: true,

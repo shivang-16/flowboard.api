@@ -1,10 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs"; 
 import crypto from "crypto";
-import { promisify } from "util";
 import IUser from "../types/IUser";
-
-const pbkdf2Async = promisify(crypto.pbkdf2);
 
 const userSchema = new Schema<IUser>({
   firstname: {

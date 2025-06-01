@@ -16,6 +16,7 @@ exports.deleteProject = exports.updateProject = exports.getProjectById = exports
 const projectModel_1 = __importDefault(require("../../models/projectModel"));
 const error_1 = require("../../middleware/error");
 const userModel_1 = require("../../models/userModel"); // Import the User model
+const taskModel_1 = __importDefault(require("../../models/taskModel"));
 const createProject = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -86,12 +87,19 @@ const updateProject = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     var _a;
     try {
         const { id } = req.params;
-        const { name, description } = req.body;
+        const { name, description, statuses } = req.body;
         const owner = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
         if (!owner) {
             return next(new error_1.CustomError('User not authenticated', 401));
         }
-        const project = yield projectModel_1.default.findOneAndUpdate({ _id: id, owner }, { name, description }, { new: true, runValidators: true });
+        const updateFields = {};
+        if (name)
+            updateFields.name = name;
+        if (description)
+            updateFields.description = description;
+        if (statuses)
+            updateFields.statuses = statuses;
+        const project = yield projectModel_1.default.findOneAndUpdate({ _id: id, owner }, updateFields, { new: true, runValidators: true });
         if (!project) {
             return next(new error_1.CustomError('Project not found or you do not have permission to update', 404));
         }
@@ -114,10 +122,17 @@ const deleteProject = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         if (!owner) {
             return next(new error_1.CustomError('User not authenticated', 401));
         }
+        // Check if there are any tasks assigned to this project
+        const tasksCount = yield taskModel_1.default.countDocuments({ project: id });
+        if (tasksCount > 0) {
+            return next(new error_1.CustomError('Cannot delete project: It has assigned tasks.', 400));
+        }
         const project = yield projectModel_1.default.findOneAndDelete({ _id: id, owner });
         if (!project) {
             return next(new error_1.CustomError('Project not found or you do not have permission to delete', 404));
         }
+        // Remove the project from all users' projects array
+        yield userModel_1.User.updateMany({ projects: id }, { $pull: { projects: id } });
         res.status(200).json({
             success: true,
             message: 'Project deleted successfully',

@@ -39,8 +39,6 @@ exports.User = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const crypto_1 = __importDefault(require("crypto"));
-const util_1 = require("util");
-const pbkdf2Async = (0, util_1.promisify)(crypto_1.default.pbkdf2);
 const userSchema = new mongoose_1.Schema({
     firstname: {
         type: String,
