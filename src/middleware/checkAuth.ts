@@ -15,8 +15,18 @@ export const checkAuth = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { token } = req.cookies;
-  if (!token) return next(new CustomError("Login First", 400));
+  let token;
+
+  // Check for token in cookies
+  if (req.cookies.token) {
+    token = req.cookies.token;
+  }
+  // Check for token in Authorization header
+  else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) return next(new CustomError("Login First", 401));
 
   const secret = process.env.JWT_SECRET;
   if (!secret) return next(new CustomError("Jwt Secret not defined", 400));

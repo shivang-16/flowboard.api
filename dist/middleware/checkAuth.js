@@ -17,9 +17,17 @@ const error_1 = require("./error");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const userModel_1 = require("../models/userModel");
 const checkAuth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { token } = req.cookies;
+    let token;
+    // Check for token in cookies
+    if (req.cookies.token) {
+        token = req.cookies.token;
+    }
+    // Check for token in Authorization header
+    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
     if (!token)
-        return next(new error_1.CustomError("Login First", 400));
+        return next(new error_1.CustomError("Login First", 401));
     const secret = process.env.JWT_SECRET;
     if (!secret)
         return next(new error_1.CustomError("Jwt Secret not defined", 400));
