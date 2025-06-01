@@ -41,7 +41,7 @@ const project_1 = __importDefault(require("./routes/project"));
 const task_1 = __importDefault(require("./routes/task"));
 const user_1 = __importDefault(require("./routes/user"));
 (0, dotenv_1.config)({
-    path: './.env'
+    path: './.env.local'
 });
 const app = (0, express_1.default)();
 exports.app = app;

@@ -14,7 +14,7 @@ import userRoutes from './routes/user';
 
 
 config({
-    path: './.env'
+    path: './.env.local'
 });
 
 const app = express();
