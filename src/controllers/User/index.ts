@@ -51,15 +51,17 @@ export const assignUserToProject = async (
     next: NextFunction
 ) => {
     try {
-        const { projectId, userId } = req.body;
+        const { userId, projectId } = req.body;
 
         const user = await User.findById(userId);
         if (!user) {
+            console.log("user not found");
             return next(new CustomError('User not found', 404));
         }
 
         const project = await Project.findById(projectId);
         if (!project) {
+            console.log("project not found");
             return next(new CustomError('Project not found', 404));
         }
 

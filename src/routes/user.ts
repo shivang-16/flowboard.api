@@ -7,6 +7,6 @@ const router = express.Router();
 router.route('/').get(checkAuth, getAllUsers);
 router.route('/project/:projectId').get(checkAuth, getUsersByProjectId);
 router.route('/assign/task').post(checkAuth, assignUserToTask);
-router.route('/assign/project/:project').get(checkAuth, assignUserToProject);
+router.route('/assign/project').post(checkAuth, assignUserToProject);
 
 export default router;

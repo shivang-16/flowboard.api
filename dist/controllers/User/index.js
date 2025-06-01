@@ -50,13 +50,15 @@ const getUsersByProjectId = (req, res, next) => __awaiter(void 0, void 0, void 0
 exports.getUsersByProjectId = getUsersByProjectId;
 const assignUserToProject = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { projectId, userId } = req.body;
+        const { userId, projectId } = req.body;
         const user = yield userModel_1.User.findById(userId);
         if (!user) {
+            console.log("user not found");
             return next(new error_1.CustomError('User not found', 404));
         }
         const project = yield projectModel_1.default.findById(projectId);
         if (!project) {
+            console.log("project not found");
             return next(new error_1.CustomError('Project not found', 404));
         }
         // Add user to project's members if not already present
